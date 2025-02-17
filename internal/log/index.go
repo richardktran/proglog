@@ -72,6 +72,10 @@ func (i *index) Read(in int64) (out uint32, pos uint64, err error) {
 	return out, pos, nil
 }
 
+/*
+offset is the offset of the record in the store. (RELATIVE OFFSET)
+pos is the position of the record in the store.
+*/
 func (i *index) Write(off uint32, pos uint64) error {
 	if i.size+entWidth > uint64(len(i.mmap)) {
 		return io.EOF
