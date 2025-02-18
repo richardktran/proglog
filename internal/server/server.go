@@ -23,14 +23,14 @@ type CommitLog interface {
 	Read(uint64) (*api.Record, error)
 }
 
-func NewGRPCServerWithConfig(config *Config) (*grpcServer, error) {
+func NewGRPCServerWithConfig(config *Config) (*grpc.Server, error) {
 	grpcServerInstance := grpc.NewServer()
 	server, err := newGrpcServer(config)
 	if err != nil {
 		return nil, err
 	}
 	api.RegisterLogServer(grpcServerInstance, server)
-	return server, nil
+	return grpcServerInstance, nil
 }
 
 func newGrpcServer(config *Config) (srv *grpcServer, err error) {
