@@ -7,10 +7,11 @@ import (
 	"testing"
 
 	api "github.com/richardktran/proglog/api/v1"
+	"github.com/richardktran/proglog/internal/config"
 	"github.com/richardktran/proglog/internal/log"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/status"
 )
 
@@ -28,14 +29,31 @@ func TestServer(t *testing.T) {
 	}
 }
 
-func setupTest(t *testing.T, fn func(*Config)) (client api.LogClient, config *Config, teardown func()) {
+func setupTest(t *testing.T, fn func(*Config)) (client api.LogClient, cfg *Config, teardown func()) {
 	t.Helper()
-	listener, err := net.Listen("tcp", ":0")
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	require.NoError(t, err)
 
-	// Connect client
-	clientConnection, err := grpc.NewClient(listener.Addr().String(), grpc.WithTransportCredentials(insecure.NewCredentials()))
+	clientTLSConfig, err := config.SetupTLSConfig(config.TLSConfig{
+		CAFile: config.CAFile,
+	})
 	require.NoError(t, err)
+
+	// Client credentials
+	clientCredentials := credentials.NewTLS(clientTLSConfig)
+	// Connect client
+	clientConnection, err := grpc.NewClient(listener.Addr().String(), grpc.WithTransportCredentials(clientCredentials))
+	require.NoError(t, err)
+
+	// Server credentials
+	serverTLSConfig, err := config.SetupTLSConfig(config.TLSConfig{
+		CertFile:      config.ServerCertFile,
+		KeyFile:       config.ServerKeyFile,
+		CAFile:        config.CAFile,
+		ServerAddress: listener.Addr().String(),
+	})
+	require.NoError(t, err)
+	serverCredentials := credentials.NewTLS(serverTLSConfig)
 
 	// Prepare Log
 	dir, err := os.MkdirTemp("", "server-test")
@@ -44,7 +62,7 @@ func setupTest(t *testing.T, fn func(*Config)) (client api.LogClient, config *Co
 	log, err := log.NewLog(dir, log.Config{})
 	require.NoError(t, err)
 
-	cfg := &Config{
+	cfg = &Config{
 		CommitLog: log,
 	}
 
@@ -53,7 +71,7 @@ func setupTest(t *testing.T, fn func(*Config)) (client api.LogClient, config *Co
 	}
 
 	// Start server
-	server, err := NewGRPCServerWithConfig(cfg)
+	server, err := NewGRPCServerWithConfig(cfg, grpc.Creds(serverCredentials))
 	require.NoError(t, err)
 
 	go func() {
