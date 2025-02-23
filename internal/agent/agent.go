@@ -132,7 +132,7 @@ func (a *Agent) setupMembership() error {
 
 	a.membership, err = discovery.New(a.replicator, discovery.Config{
 		NodeName: a.Config.NodeName,
-		BindAddr: rpcAddr,
+		BindAddr: a.Config.BindAddr,
 		Tags: map[string]string{
 			"rpc_addr": rpcAddr,
 		},
