@@ -27,7 +27,7 @@ func TestMembership(t *testing.T) {
 	require.Eventually(t, func() bool {
 		return 2 == len(handler.joins) &&
 			3 == len(m[0].Members()) && // 3 members because the member 2 is still in the list
-			serf.StatusLeft == m[2].Members()[0].Status && // member 2 left
+			serf.StatusLeft == m[0].Members()[2].Status && // member 2 left
 			1 == len(handler.leaves) // 1 leave
 	}, 3*time.Second, 250*time.Millisecond)
 
