@@ -2,12 +2,11 @@ package discovery
 
 import (
 	"fmt"
-	"log"
-	"net"
 	"testing"
 	"time"
 
 	"github.com/hashicorp/serf/serf"
+	"github.com/richardktran/proglog/internal/utils"
 	"github.com/stretchr/testify/require"
 )
 
@@ -37,7 +36,9 @@ func TestMembership(t *testing.T) {
 func setupMember(t *testing.T, members []*Membership) ([]*Membership, *handler) {
 	id := len(members)
 	host := "127.0.0.1"
-	addr := fmt.Sprintf("%s:%d", host, getFreePort(host))
+	ports, err := utils.GetFreePort(host, 1)
+	require.NoError(t, err)
+	addr := fmt.Sprintf("%s:%d", host, ports[0])
 	tags := map[string]string{
 		"rpc_addr": addr,
 	}
@@ -61,21 +62,6 @@ func setupMember(t *testing.T, members []*Membership) ([]*Membership, *handler) 
 	require.NoError(t, err)
 	members = append(members, m)
 	return members, h
-}
-
-func getFreePort(host string) int {
-	listener, err := net.Listen("tcp", fmt.Sprintf("%s:0", host))
-	if err != nil {
-		panic(fmt.Sprintf("can not find any port to assign: %v", err))
-	}
-
-	defer func() {
-		if err := listener.Close(); err != nil {
-			log.Printf("listener.Close(): %v", err)
-		}
-	}()
-
-	return listener.Addr().(*net.TCPAddr).Port
 }
 
 type handler struct {
