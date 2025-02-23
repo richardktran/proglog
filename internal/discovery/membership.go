@@ -29,7 +29,7 @@ type Config struct {
 	NodeName       string
 	BindAddr       string
 	Tags           map[string]string
-	StartJoinAddrs []string
+	StartJoinAddrs []string // StartJoinAddrs is the list of addresses to join upon starting
 }
 
 func (m *Membership) setupSerf() error {
